@@ -11,7 +11,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-app = FastAPI(title="VisionTrace")
+app = FastAPI(title="CharmLens")
 
 
 @lru_cache(maxsize=1)
@@ -19,7 +19,7 @@ def detector():
     """Load once so image requests do not repeatedly initialize the model."""
     try:
         from ultralytics import YOLO
-        return YOLO(os.getenv("VISIONTRACE_MODEL", "yolo11n.pt"))
+        return YOLO(os.getenv("CHARMLENS_MODEL", os.getenv("VISIONTRACE_MODEL", "yolo11n.pt")))
     except Exception:
         return None
 

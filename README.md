@@ -1,13 +1,13 @@
-# VisionTrace
+# CharmLens
 
-VisionTrace is a local web application for accurate **edge-aware blob analysis** and **object detection** in images. It combines Canny edges, adaptive thresholding, morphology, contour filtering, and non-maximum-suppressed YOLO detections in one reviewable result.
+CharmLens is a local, explainable image-analysis tool for finding keychains and tiny charms in busy photos. Upload a picture, tune the scan, and get an annotated trace alongside the edge map, candidate mask, and measurable region details.
 
-## What it does
+## Highlights
 
-- Finds blob regions with area, centroid, perimeter, and circularity metrics.
-- Draws edge maps and blob masks so results are explainable, not a black box.
-- Runs YOLO object detection when `ultralytics` weights are available (the first use downloads the default model).
-- Provides a training entry point for a labelled YOLO-format dataset.
+- **Charm-first workflow:** the interface is designed around finding keychains, not generic computer-vision output.
+- **Explainable results:** inspect candidate blobs with area, centroid, perimeter, circularity, and a visual mask.
+- **Optional trained detector:** when YOLO weights are available, confirmed detections are drawn in mint green beside the coral candidate regions.
+- **Private by default:** the FastAPI server runs locally and uploaded images are processed in memory.
 
 ## Run locally
 
@@ -18,11 +18,18 @@ pip install -r requirements.txt
 uvicorn backend.app:app --reload
 ```
 
-Open `http://127.0.0.1:8000`, upload an image, then tune the confidence and minimum-area controls.
+Open <http://127.0.0.1:8000>, upload a PNG, JPG, or WEBP image, then adjust detection confidence and the smallest charm area before selecting **Find keychains**.
 
-## Train a detector
+## Optional custom model
 
-Prepare a YOLO dataset and a `data.yaml`, for example:
+CharmLens will use `CHARMLENS_MODEL` when it points to a trained Ultralytics checkpoint. If no usable weights are available, the candidate-region analysis still works and the model status is shown as **OFF**.
+
+```powershell
+$env:CHARMLENS_MODEL = 'C:\path\to\best.pt'
+uvicorn backend.app:app --reload
+```
+
+To train a detector, prepare a YOLO dataset:
 
 ```text
 dataset/
@@ -31,14 +38,20 @@ dataset/
   data.yaml
 ```
 
-Run:
+Then run:
 
 ```powershell
 python backend/train.py --data C:\path\to\data.yaml --epochs 100 --model yolo11s.pt
 ```
 
-Use the resulting `best.pt` path in the `VISIONTRACE_MODEL` environment variable before starting the server. For real accuracy, label representative images, reserve a validation set, and use the model size and epoch count appropriate for the available GPU. Do not evaluate on training images alone.
+The resulting checkpoint is written under `runs/charmlens/`.
 
 ## API
 
-`POST /api/analyze` accepts `image`, `confidence`, and `min_area`, returning an annotated PNG plus detection and blob metadata.
+`POST /api/analyze` accepts multipart fields `image`, `confidence`, and `min_area`. It returns data URLs for `annotated`, `edges`, and `mask`, plus `blobs`, `detections`, and `model_ready` metadata.
+
+## Project layout
+
+- `frontend/` — CharmLens single-page interface.
+- `backend/app.py` — FastAPI endpoint and OpenCV analysis pipeline.
+- `backend/train.py` — optional YOLO training entry point.
